@@ -251,6 +251,16 @@
       text-align: center; padding: 40px;
       color: var(--muted); font-size: 14px;
     }
+
+    .table-scroll {
+      max-height: 380px;
+      overflow-y: auto;
+      border-radius: 8px;
+    }
+
+    .table-scroll::-webkit-scrollbar { width: 6px; }
+    .table-scroll::-webkit-scrollbar-track { background: var(--border); border-radius: 3px; }
+    .table-scroll::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -300,16 +310,6 @@
     <span id="timestamp">Belum ada data</span>
   </div>
 
-  <div class="table-section">
-    <div class="table-header">
-      <div class="table-title">📋 Tabel Data Sensor</div>
-      <div class="table-count" id="tableCount">0 data</div>
-    </div>
-    <div id="tableWrap">
-      <div class="no-table-data">Belum ada data masuk</div>
-    </div>
-  </div>
-
   <div class="chart-section" style="margin-top:24px">
     <div class="chart-header">
       <div class="chart-title">Riwayat 20 Data Terakhir</div>
@@ -324,6 +324,16 @@
         <p>Grafik akan muncul saat data masuk</p>
       </div>
       <canvas id="chart" style="display:none"></canvas>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title">📋 Tabel Data Sensor</div>
+      <div class="table-count" id="tableCount">0 data</div>
+    </div>
+    <div id="tableWrap">
+      <div class="no-table-data">Belum ada data masuk</div>
     </div>
   </div>
 </main>
@@ -392,17 +402,19 @@
     `).join('');
 
     document.getElementById('tableWrap').innerHTML = `
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Waktu</th>
-            <th>Kelembaban Tanah</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Waktu</th>
+              <th>Kelembaban Tanah</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     `;
   }
 
