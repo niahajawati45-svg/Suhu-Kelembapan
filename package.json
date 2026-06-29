@@ -1,0 +1,14 @@
+{
+  "name": "iot-dashboard",
+  "version": "1.0.0",
+  "description": "IoT Dashboard Monitoring Suhu & Kelembaban - Tugas UAS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mqtt": "^5.3.4",
+    "socket.io": "^4.7.2"
+  }
+}
