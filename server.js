@@ -19,8 +19,8 @@ const MQTT_TOPIC = 'iot/sensor/dht';
 
 // Simpan data terbaru
 let latestData = {
-  suhu: null,
-  kelembaban: null,
+  kelembaban_tanah: null,
+  status: null,
   timestamp: null
 };
 
@@ -47,18 +47,15 @@ mqttClient.on('message', (topic, message) => {
   try {
     const data = JSON.parse(message.toString());
     latestData = {
-      suhu: data.suhu,
-      kelembaban: data.kelembaban,
+      kelembaban_tanah: data.kelembaban_tanah,
+      status: data.status,
       timestamp: new Date().toLocaleTimeString('id-ID')
     };
 
-    // Simpan ke history
     history.push({ ...latestData });
     if (history.length > 20) history.shift();
 
-    console.log(`📊 Data diterima - Suhu: ${data.suhu}°C, Kelembaban: ${data.kelembaban}%`);
-
-    // Kirim ke semua client dashboard via Socket.io
+    console.log(`🌱 Data diterima - Kelembaban Tanah: ${data.kelembaban_tanah}% (${data.status})`);
     io.emit('data-sensor', { latest: latestData, history });
   } catch (e) {
     console.error('❌ Error parse data:', e.message);
@@ -87,7 +84,6 @@ app.get('/', (req, res) => {
 // =====================
 io.on('connection', (socket) => {
   console.log('🖥️  Dashboard terhubung');
-  // Kirim data terbaru saat client connect
   socket.emit('data-sensor', { latest: latestData, history });
 });
 

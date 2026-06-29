@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IoT Dashboard — Monitoring Suhu & Kelembaban</title>
+  <title>IoT Dashboard — Monitoring Kelembaban Tanah</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
@@ -12,16 +12,16 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #21262d;
-      --text: #e6edf3;
-      --muted: #7d8590;
-      --suhu: #ff6b35;
-      --suhu-glow: rgba(255, 107, 53, 0.15);
-      --lembab: #3b82f6;
-      --lembab-glow: rgba(59, 130, 246, 0.15);
-      --green: #3fb950;
+      --bg: #0a0f0d;
+      --surface: #111a14;
+      --border: #1e2e21;
+      --text: #e2ede4;
+      --muted: #6b8c70;
+      --green: #4ade80;
+      --green-dark: #16a34a;
+      --green-glow: rgba(74, 222, 128, 0.15);
+      --brown: #a16207;
+      --blue: #38bdf8;
       --radius: 12px;
     }
 
@@ -32,7 +32,6 @@
       min-height: 100vh;
     }
 
-    /* HEADER */
     header {
       display: flex;
       align-items: center;
@@ -42,136 +41,107 @@
       background: var(--surface);
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .logo { display: flex; align-items: center; gap: 12px; }
 
     .logo-icon {
       width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--suhu), var(--lembab));
+      background: linear-gradient(135deg, #4ade80, #16a34a);
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
     }
 
-    .logo-text h1 {
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: -0.3px;
-    }
-
-    .logo-text p {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .logo-text h1 { font-size: 16px; font-weight: 600; }
+    .logo-text p { font-size: 12px; color: var(--muted); }
 
     .status-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: flex; align-items: center; gap: 8px;
       padding: 6px 14px;
       border-radius: 20px;
       border: 1px solid var(--border);
-      font-size: 13px;
-      color: var(--muted);
+      font-size: 13px; color: var(--muted);
       font-family: 'JetBrains Mono', monospace;
     }
 
     .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-      transition: background 0.3s;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted); transition: background 0.3s;
     }
-
     .status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
-    /* MAIN */
-    main {
-      padding: 32px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    main { padding: 32px; max-width: 1100px; margin: 0 auto; }
 
-    /* KARTU SENSOR */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      margin-bottom: 28px;
-    }
+    /* KARTU UTAMA */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px; }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 28px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s;
+      position: relative; overflow: hidden;
     }
 
     .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
     }
 
-    .card.suhu::before { background: var(--suhu); }
-    .card.lembab::before { background: var(--lembab); }
+    .card.moisture::before { background: linear-gradient(90deg, #4ade80, #16a34a); }
+    .card.status-card::before { background: linear-gradient(90deg, #a16207, #ca8a04); }
 
     .card-label {
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 16px;
+      font-size: 12px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 16px;
     }
 
     .card-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 56px;
-      font-weight: 500;
-      line-height: 1;
-      margin-bottom: 8px;
+      font-size: 56px; font-weight: 500;
+      line-height: 1; margin-bottom: 8px;
       transition: color 0.3s;
     }
 
-    .card.suhu .card-value { color: var(--suhu); }
-    .card.lembab .card-value { color: var(--lembab); }
+    .card.moisture .card-value { color: var(--green); }
+    .card.status-card .card-value { font-size: 28px; color: #fbbf24; margin-top: 12px; }
 
-    .card-unit {
-      font-size: 22px;
-      font-weight: 300;
-      opacity: 0.7;
-    }
-
-    .card-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 12px;
-    }
-
+    .card-unit { font-size: 22px; font-weight: 300; opacity: 0.7; }
     .card-icon {
-      position: absolute;
-      right: 24px;
-      top: 50%;
+      position: absolute; right: 24px; top: 50%;
       transform: translateY(-50%);
-      font-size: 48px;
-      opacity: 0.08;
+      font-size: 48px; opacity: 0.08;
+    }
+
+    /* GAUGE */
+    .gauge-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 8px 0;
+    }
+
+    .gauge-bar-outer {
+      width: 100%; height: 12px;
+      background: var(--border);
+      border-radius: 6px; overflow: hidden;
+      margin: 12px 0 6px;
+    }
+
+    .gauge-bar-inner {
+      height: 100%; border-radius: 6px;
+      background: linear-gradient(90deg, #a16207, #4ade80, #38bdf8);
+      transition: width 0.8s ease;
+    }
+
+    .gauge-labels {
+      display: flex; justify-content: space-between;
+      width: 100%; font-size: 11px; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     /* TIMESTAMP */
     .timestamp-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted);
       margin-bottom: 28px;
       font-family: 'JetBrains Mono', monospace;
     }
@@ -185,73 +155,37 @@
     }
 
     .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 24px;
     }
 
-    .chart-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
+    .chart-title { font-size: 15px; font-weight: 600; }
 
-    .chart-legend {
-      display: flex;
-      gap: 20px;
-    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .chart-wrap { position: relative; height: 260px; }
 
-    .legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-    }
-
-    .chart-wrap {
-      position: relative;
-      height: 280px;
-    }
-
-    /* NO DATA */
     .no-data {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-      color: var(--muted);
-      gap: 12px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 200px;
+      color: var(--muted); gap: 12px;
     }
-
     .no-data-icon { font-size: 40px; opacity: 0.4; }
     .no-data p { font-size: 14px; }
 
-    /* WAITING */
-    .waiting {
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
+    .waiting { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-icon">📡</div>
+    <div class="logo-icon">🌱</div>
     <div class="logo-text">
       <h1>IoT Dashboard</h1>
-      <p>Monitoring Suhu & Kelembaban — ESP8266</p>
+      <p>Monitoring Kelembaban Tanah — ESP8266</p>
     </div>
   </div>
   <div class="status-pill">
@@ -262,21 +196,27 @@
 
 <main>
   <div class="cards">
-    <div class="card suhu">
-      <div class="card-icon">🌡️</div>
-      <div class="card-label">Suhu</div>
-      <div class="card-value" id="suhuVal">
-        <span class="waiting">--</span><span class="card-unit">°C</span>
-      </div>
-      <div class="card-sub" id="suhuStatus">Menunggu data dari sensor...</div>
-    </div>
-    <div class="card lembab">
+    <!-- Kartu kelembaban -->
+    <div class="card moisture">
       <div class="card-icon">💧</div>
-      <div class="card-label">Kelembaban</div>
-      <div class="card-value" id="lembabVal">
+      <div class="card-label">Kelembaban Tanah</div>
+      <div class="card-value" id="soilVal">
         <span class="waiting">--</span><span class="card-unit">%</span>
       </div>
-      <div class="card-sub" id="lembabStatus">Menunggu data dari sensor...</div>
+      <div class="gauge-wrap">
+        <div class="gauge-bar-outer">
+          <div class="gauge-bar-inner" id="gaugeBar" style="width:0%"></div>
+        </div>
+        <div class="gauge-labels"><span>0% Kering</span><span>100% Basah</span></div>
+      </div>
+    </div>
+
+    <!-- Kartu status -->
+    <div class="card status-card">
+      <div class="card-icon">🌿</div>
+      <div class="card-label">Status Tanah</div>
+      <div class="card-value" id="soilStatus"><span class="waiting">--</span></div>
+      <div style="font-size:13px; color: var(--muted); margin-top: 16px;" id="soilAdvice">Menunggu data dari sensor...</div>
     </div>
   </div>
 
@@ -288,15 +228,9 @@
   <div class="chart-section">
     <div class="chart-header">
       <div class="chart-title">Riwayat 20 Data Terakhir</div>
-      <div class="chart-legend">
-        <div class="legend-item">
-          <div class="legend-dot" style="background: #ff6b35"></div>
-          Suhu (°C)
-        </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background: #3b82f6"></div>
-          Kelembaban (%)
-        </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #4ade80"></div>
+        Kelembaban Tanah (%)
       </div>
     </div>
     <div class="chart-wrap">
@@ -324,24 +258,25 @@
   });
 
   socket.on('data-sensor', ({ latest, history }) => {
-    if (!latest || latest.suhu === null) return;
+    if (!latest || latest.kelembaban_tanah === null) return;
 
-    // Update kartu
-    document.getElementById('suhuVal').innerHTML = `${latest.suhu}<span class="card-unit">°C</span>`;
-    document.getElementById('lembabVal').innerHTML = `${latest.kelembaban}<span class="card-unit">%</span>`;
+    const val = latest.kelembaban_tanah;
+
+    document.getElementById('soilVal').innerHTML = `${val}<span class="card-unit">%</span>`;
+    document.getElementById('gaugeBar').style.width = `${val}%`;
+    document.getElementById('soilStatus').textContent = latest.status || '--';
     document.getElementById('timestamp').textContent = `Update terakhir: ${latest.timestamp}`;
 
-    // Status suhu
-    const suhu = parseFloat(latest.suhu);
-    let suhuStatus = suhu < 20 ? '🥶 Dingin' : suhu < 30 ? '✅ Normal' : suhu < 35 ? '⚠️ Hangat' : '🔥 Panas';
-    document.getElementById('suhuStatus').textContent = suhuStatus;
+    // Saran berdasarkan status
+    const advice = {
+      'Sangat Kering': '⚠️ Tanah perlu segera disiram!',
+      'Kering': '🪣 Sebaiknya segera disiram.',
+      'Normal': '✅ Kondisi tanah baik untuk tanaman.',
+      'Lembab': '💧 Tanah cukup lembab.',
+      'Sangat Basah': '🌊 Tanah terlalu basah, kurangi penyiraman.'
+    };
+    document.getElementById('soilAdvice').textContent = advice[latest.status] || '';
 
-    // Status kelembaban
-    const lembab = parseFloat(latest.kelembaban);
-    let lembabStatus = lembab < 30 ? '🏜️ Terlalu kering' : lembab < 60 ? '✅ Normal' : lembab < 80 ? '💦 Lembab' : '🌊 Terlalu lembab';
-    document.getElementById('lembabStatus').textContent = lembabStatus;
-
-    // Update chart
     if (history.length > 0) {
       document.getElementById('noData').style.display = 'none';
       document.getElementById('chart').style.display = 'block';
@@ -351,13 +286,11 @@
 
   function updateChart(history) {
     const labels = history.map(d => d.timestamp);
-    const suhuData = history.map(d => d.suhu);
-    const lembabData = history.map(d => d.kelembaban);
+    const data = history.map(d => d.kelembaban_tanah);
 
     if (chartInstance) {
       chartInstance.data.labels = labels;
-      chartInstance.data.datasets[0].data = suhuData;
-      chartInstance.data.datasets[1].data = lembabData;
+      chartInstance.data.datasets[0].data = data;
       chartInstance.update('active');
       return;
     }
@@ -367,30 +300,17 @@
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'Suhu (°C)',
-            data: suhuData,
-            borderColor: '#ff6b35',
-            backgroundColor: 'rgba(255,107,53,0.08)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointBackgroundColor: '#ff6b35',
-            tension: 0.4,
-            fill: true
-          },
-          {
-            label: 'Kelembaban (%)',
-            data: lembabData,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.08)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointBackgroundColor: '#3b82f6',
-            tension: 0.4,
-            fill: true
-          }
-        ]
+        datasets: [{
+          label: 'Kelembaban Tanah (%)',
+          data,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74,222,128,0.08)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#4ade80',
+          tension: 0.4,
+          fill: true
+        }]
       },
       options: {
         responsive: true,
@@ -399,12 +319,13 @@
         plugins: { legend: { display: false } },
         scales: {
           x: {
-            ticks: { color: '#7d8590', font: { family: 'JetBrains Mono', size: 11 } },
-            grid: { color: '#21262d' }
+            ticks: { color: '#6b8c70', font: { family: 'JetBrains Mono', size: 11 } },
+            grid: { color: '#1e2e21' }
           },
           y: {
-            ticks: { color: '#7d8590', font: { family: 'JetBrains Mono', size: 11 } },
-            grid: { color: '#21262d' }
+            min: 0, max: 100,
+            ticks: { color: '#6b8c70', font: { family: 'JetBrains Mono', size: 11 } },
+            grid: { color: '#1e2e21' }
           }
         }
       }
