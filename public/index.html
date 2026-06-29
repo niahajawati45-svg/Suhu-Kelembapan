@@ -176,6 +176,81 @@
 
     .waiting { animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* TABEL */
+    .table-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-top: 24px;
+    }
+
+    .table-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .table-title { font-size: 15px; font-weight: 600; }
+
+    .table-count {
+      font-size: 12px; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table thead tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .data-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: rgba(74,222,128,0.04); }
+
+    .data-table td {
+      padding: 12px 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .data-table td:first-child { color: var(--muted); font-size: 12px; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-kering { background: rgba(161,98,7,0.2); color: #fbbf24; }
+    .badge-sangat-kering { background: rgba(239,68,68,0.2); color: #f87171; }
+    .badge-normal { background: rgba(74,222,128,0.2); color: #4ade80; }
+    .badge-lembab { background: rgba(56,189,248,0.2); color: #38bdf8; }
+    .badge-sangat-basah { background: rgba(99,102,241,0.2); color: #818cf8; }
+
+    .no-table-data {
+      text-align: center; padding: 40px;
+      color: var(--muted); font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -225,7 +300,17 @@
     <span id="timestamp">Belum ada data</span>
   </div>
 
-  <div class="chart-section">
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title">📋 Tabel Data Sensor</div>
+      <div class="table-count" id="tableCount">0 data</div>
+    </div>
+    <div id="tableWrap">
+      <div class="no-table-data">Belum ada data masuk</div>
+    </div>
+  </div>
+
+  <div class="chart-section" style="margin-top:24px">
     <div class="chart-header">
       <div class="chart-title">Riwayat 20 Data Terakhir</div>
       <div class="legend-item">
@@ -281,8 +366,45 @@
       document.getElementById('noData').style.display = 'none';
       document.getElementById('chart').style.display = 'block';
       updateChart(history);
+      updateTable(history);
     }
   });
+
+  function updateTable(history) {
+    const reversed = [...history].reverse();
+    document.getElementById('tableCount').textContent = `${reversed.length} data`;
+
+    const badgeClass = {
+      'Sangat Kering': 'badge-sangat-kering',
+      'Kering': 'badge-kering',
+      'Normal': 'badge-normal',
+      'Lembab': 'badge-lembab',
+      'Sangat Basah': 'badge-sangat-basah'
+    };
+
+    const rows = reversed.map((d, i) => `
+      <tr>
+        <td>#${reversed.length - i}</td>
+        <td>${d.timestamp}</td>
+        <td>${d.kelembaban_tanah}%</td>
+        <td><span class="badge ${badgeClass[d.status] || ''}">${d.status}</span></td>
+      </tr>
+    `).join('');
+
+    document.getElementById('tableWrap').innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Waktu</th>
+            <th>Kelembaban Tanah</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
 
   function updateChart(history) {
     const labels = history.map(d => d.timestamp);
